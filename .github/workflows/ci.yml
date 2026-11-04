@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  substrate:
+    name: Validate project substrate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify required project files
+        shell: bash
+        run: |
+          test -f README.md
+          test -f AGENTS.md
+          test -f SECURITY.md
+          test -f CONTRIBUTING.md
+          test -f LICENSE
+          test -f .env.example
+          test -f docs/architecture.md
+
+      - name: Reject tracked secrets and runtime data
+        shell: bash
+        run: |
+          if git ls-files \
+            | grep -E '(^|/)(\.env($|\.)|data/|backups/|artifacts/|uploads/)' \
+            | grep -v -E '(^|/)\.env\.example$'; then
+            echo "Tracked private runtime data or environment files detected."
+            exit 1
+          fi
+
+      - name: Check committed whitespace
+        run: git show --check --oneline --no-renames HEAD

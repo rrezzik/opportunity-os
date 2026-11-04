@@ -1,0 +1,37 @@
+name: Bounded feature
+description: Plan one small, testable vertical slice
+title: ""
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What useful outcome should exist when this issue is complete?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Definition of done
+      description: List observable acceptance criteria.
+    validations:
+      required: true
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Explicit exclusions
+      description: What related work is intentionally outside this issue?
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: Which tests and checks will demonstrate completion?
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy and security
+      description: Note any effect on URLs, source content, personal data, prompts, logs, or secrets.
