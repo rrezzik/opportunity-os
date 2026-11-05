@@ -2,7 +2,7 @@
 
 Opportunity OS is an AI-assisted opportunity intelligence and job-search workflow. It is intended to make job searching easier to begin, more evidence-driven, and more useful over time.
 
-> **Status:** Project substrate. The first planned vertical slice captures a job-posting URL and produces evidence-backed structured extraction for human review.
+> **Status:** Local extraction spike. The current vertical slice fetches one of two explicitly approved public job postings, creates a manual OpenCode extraction prompt, validates the returned JSON, and displays each extracted claim with supporting evidence for human review.
 
 ## Problem
 
@@ -13,7 +13,7 @@ Opportunity OS will provide two connected views:
 - **Opportunity CRM:** capture, review, prepare, and track individual opportunities.
 - **Market Intelligence:** aggregate approved postings to identify recurring capabilities, role families, and directional market signals.
 
-## Initial User Flow
+## Target User Flow
 
 ```text
 Open web interface
@@ -27,6 +27,23 @@ Open web interface
 ```
 
 Every extracted fact should remain traceable to the source posting. AI output is a draft until a human approves it.
+
+## Current Extraction Spike
+
+The implemented local flow deliberately stops before persistence, correction history, approval, CRM ingestion, and Market Intelligence aggregation:
+
+```text
+Approved posting URL
+→ browser-compatible server fetch
+→ in-memory source cleaning
+→ Copy Prompt
+→ manual OpenCode inference
+→ Paste JSON
+→ strict schema and source-URL validation
+→ evidence review
+```
+
+The API accepts only the Fellow Software Engineer and Multiview Software Developer URLs encoded in [`apps/api/app/services.py`](apps/api/app/services.py). This narrow allowlist prevents the server from acting as a general-purpose URL fetcher. Fetched HTML, cleaned source, prompts, and model output are not persisted by this spike.
 
 ## Planned Architecture
 
@@ -60,12 +77,51 @@ See [`SECURITY.md`](SECURITY.md) for reporting and data-handling expectations.
 
 ## Local Development
 
-Application setup will be added with the first vertical slice. Prerequisites are currently:
+Prerequisites:
 
 - Docker with Docker Compose
 - Git
 
 Do not add real personal or application data to development fixtures.
+
+Start the local stack from the repository root:
+
+```bash
+docker compose up --build
+```
+
+Open the web interface at <http://localhost:5173>. The FastAPI service and interactive API documentation are available at <http://localhost:8000> and <http://localhost:8000/docs>.
+
+### Manual OpenCode handoff
+
+1. Keep or paste one of the approved posting URLs and select **Fetch**.
+2. Review the cleaned source, then select **Copy prompt**.
+3. Paste the prompt into a new OpenCode request. Do not add private candidate or application data.
+4. Copy the JSON-only response into **OpenCode JSON response**.
+5. Select **Validate and display**.
+6. Review every extracted value against its quotation. Validation confirms the JSON contract and source URL, not factual correctness.
+
+This handoff is intentionally manual: the application does not expose OpenCode as a local network service and does not require a paid model API.
+
+Stop the stack with:
+
+```bash
+docker compose down
+```
+
+## Verification
+
+Run these checks from the repository root before requesting review:
+
+```bash
+docker compose config
+docker compose build
+docker compose run --rm api pytest -q
+docker compose run --rm web npm run build
+git diff --check
+```
+
+For a live smoke test, start the stack and confirm that `/health`, the web interface, the approved Fellow fetch, malformed extraction rejection, and valid extraction display all work.
 
 ## Non-Goals
 
