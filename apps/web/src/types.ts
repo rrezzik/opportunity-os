@@ -30,11 +30,23 @@ export type PostingExtraction = {
 };
 
 export type SourcePackage = {
+  id: string;
   source_format_version: "1.0";
   source_url: string;
   source_identifier: string;
   source_label: string;
+  captured_at: string;
   raw_source: string;
   cleaned_source: string;
+  content_sha256: string;
   prompt: string;
+};
+
+export type ProvisionalDraft = {
+  id: string;
+  capture_id: string;
+  extraction_schema_version: "1.0";
+  status: "provisional";
+  created_at: string;
+  extraction: PostingExtraction;
 };

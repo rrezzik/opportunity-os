@@ -2,7 +2,7 @@
 
 Opportunity OS is an AI-assisted opportunity intelligence and job-search workflow. It is intended to make job searching easier to begin, more evidence-driven, and more useful over time.
 
-> **Status:** Local extraction spike. The current vertical slice fetches one of two explicitly approved public job postings, creates a manual OpenCode extraction prompt, validates the returned JSON, and displays each extracted claim with supporting evidence for human review.
+> **Status:** Persistent local extraction spike. The current vertical slice captures one of two explicitly approved public job postings in PostgreSQL, creates a manual OpenCode extraction prompt, validates the returned JSON against server-owned source text, saves a provisional draft, and displays each claim with supporting evidence for human review.
 
 ## Problem
 
@@ -30,30 +30,31 @@ Every extracted fact should remain traceable to the source posting. AI output is
 
 ## Current Extraction Spike
 
-The implemented local flow deliberately stops before persistence, correction history, approval, CRM ingestion, and Market Intelligence aggregation:
+The implemented local flow deliberately stops before correction, approval, CRM ingestion, Market Intelligence aggregation, and embeddings:
 
 ```text
 Approved posting URL
 → browser-compatible server fetch
-→ in-memory source cleaning
+→ source cleaning and PostgreSQL capture
 → Copy Prompt
 → manual OpenCode inference
 → Paste JSON
-→ versioned schema, provenance, and exact evidence validation
+→ server-side capture lookup, versioned schema, provenance, and exact evidence validation
+→ PostgreSQL provisional draft
 → evidence review
 ```
 
 The API accepts only the Fellow Software Engineer and Multiview Software Developer URLs encoded in [`apps/api/app/services.py`](apps/api/app/services.py). This narrow allowlist prevents the server from acting as a general-purpose URL fetcher. Redirects and query parameters are rejected.
 
-Raw HTML and canonical cleaned source are kept as distinct in-memory values. Extraction contract `1.0` requires every non-null value to include `supporting_source_text` copied as one exact, contiguous substring of the cleaned source, plus a low, medium, or high model-confidence label. Validation confirms the schema version, source URL, source identifier, cleaned-source provenance markers, and every exact evidence match before displaying the provisional result. Exact matching proves that text exists; it does not prove that the model interpreted it correctly, so human review remains required.
+Raw HTML and canonical cleaned source are stored as distinct values. Each capture also records its URL, source identifier, capture time, source format version, and a SHA-256 hash of the raw response. Extraction contract `1.0` requires every non-null value to include `supporting_source_text` copied as one exact, contiguous substring of the cleaned source, plus a low, medium, or high model-confidence label. The browser submits a capture ID—not source text—during validation. The API reloads authoritative provenance, confirms the schema version, source URL, source identifier, cleaned-source markers, and every exact evidence match, then saves structured JSON with `provisional` status. Exact matching proves that text exists; it does not prove that the model interpreted it correctly, so human review remains required.
 
-Fetched HTML, cleaned source, prompts, and model output are not persisted by this spike. Until server-owned persistence is introduced, the local web client returns its in-memory cleaned source to the API during validation.
+Capture and draft retrieval endpoints are `GET /api/captures/{capture_id}` and `GET /api/extractions/{extraction_id}`. PostgreSQL survives API/container restart through a named Docker volume. `docker compose down` preserves it; `docker compose down --volumes` intentionally deletes local runtime records. Runtime records and volumes must never be committed.
 
-## Planned Architecture
+## Architecture
 
 - React and TypeScript web interface
 - Python and FastAPI API
-- PostgreSQL as the structured source of truth
+- PostgreSQL as the implemented structured source of truth
 - `pgvector` only where semantic retrieval adds demonstrated value
 - Docker Compose for local development
 - GitHub Actions for CI/CD
@@ -94,6 +95,13 @@ Start the local stack from the repository root:
 docker compose up --build
 ```
 
+The API waits for PostgreSQL's health check and runs `alembic upgrade head` before starting. To run migrations explicitly without starting the API:
+
+```bash
+docker compose up -d db
+docker compose run --rm api alembic upgrade head
+```
+
 Open the web interface at <http://localhost:5173>. The FastAPI service and interactive API documentation are available at <http://localhost:8000> and <http://localhost:8000/docs>.
 
 ### Manual OpenCode handoff
@@ -102,8 +110,8 @@ Open the web interface at <http://localhost:5173>. The FastAPI service and inter
 2. Review the cleaned source, then select **Copy prompt**.
 3. Paste the prompt into a new OpenCode request. Do not add private candidate or application data.
 4. Copy the JSON-only response into **OpenCode JSON response**.
-5. Select **Validate and display**.
-6. Review every extracted value against its supporting source text. Validation confirms that the evidence occurs verbatim in the cleaned source, not that the model's interpretation is factually or semantically correct.
+5. Select **Validate and save draft**.
+6. Confirm that capture and provisional draft IDs are displayed, then review every extracted value against its supporting source text. Validation confirms that the evidence occurs verbatim in the server-owned cleaned source, not that the model's interpretation is factually or semantically correct.
 
 This handoff is intentionally manual: the application does not expose OpenCode as a local network service and does not require a paid model API.
 
@@ -120,12 +128,17 @@ Run these checks from the repository root before requesting review:
 ```bash
 docker compose config
 docker compose build
+docker compose up -d db
+docker compose run --rm api alembic upgrade head
 docker compose run --rm api pytest -q
 docker compose run --rm web npm run build
 git diff --check
+git ls-files | grep -E '(^|/)(\.env($|\.)|data/|backups/|artifacts/|uploads/)' | grep -v -E '(^|/)\.env\.example$' && exit 1 || true
 ```
 
-For a live smoke test, start the stack and confirm that `/health`, the web interface, the approved Fellow fetch, malformed extraction rejection, and valid extraction display all work.
+The test suite includes deterministic parsing/validation tests with minimized fixtures and a real PostgreSQL integration test. The integration test creates and retrieves a capture and draft after closing the first application client and disposing its database connections; it never calls a live website or model.
+
+For a live smoke test, start the stack and confirm that `/health`, the web interface, the approved Fellow fetch, malformed extraction rejection, and valid draft save all work. Restart the API with `docker compose restart api`, then retrieve the recorded IDs through the API documentation to verify persistence.
 
 ## Non-Goals
 

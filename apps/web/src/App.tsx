@@ -4,6 +4,7 @@ import type {
   EvidenceItem,
   EvidenceText,
   PostingExtraction,
+  ProvisionalDraft,
   SourcePackage,
 } from "./types";
 
@@ -63,6 +64,7 @@ export default function App() {
   const [source, setSource] = useState<SourcePackage | null>(null);
   const [rawJson, setRawJson] = useState("");
   const [extraction, setExtraction] = useState<PostingExtraction | null>(null);
+  const [draft, setDraft] = useState<ProvisionalDraft | null>(null);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -74,6 +76,7 @@ export default function App() {
     setStatus("Fetching and cleaning the approved posting…");
     setSource(null);
     setExtraction(null);
+    setDraft(null);
     try {
       const response = await fetch(`${API_URL}/api/source`, {
         method: "POST",
@@ -113,16 +116,16 @@ export default function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          expected_source_url: source.source_url,
-          canonical_cleaned_source: source.cleaned_source,
+          capture_id: source.id,
           raw_json: rawJson,
         }),
       });
       if (!response.ok) throw new Error(await errorMessage(response));
-      const data = (await response.json()) as { extraction: PostingExtraction };
+      const data = (await response.json()) as ProvisionalDraft;
+      setDraft(data);
       setExtraction(data.extraction);
       setStatus(
-        "Extraction validated. Review every value against its supporting source text.",
+        "Provisional draft saved. Review every value against its supporting source text.",
       );
     } catch (caught) {
       setExtraction(null);
@@ -168,7 +171,7 @@ export default function App() {
             <strong>{source.source_label}</strong> · {source.source_identifier}
           </p>
           <p className="source-meta">
-            Raw source preserved separately in memory (
+            Capture {source.id} saved with raw source preserved separately (
             {source.raw_source.length.toLocaleString()} characters).
           </p>
           <details>
@@ -195,7 +198,7 @@ export default function App() {
               rows={12}
               required
             />
-            <button type="submit" disabled={loading}>Validate and display</button>
+            <button type="submit" disabled={loading}>Validate and save draft</button>
           </form>
         </section>
       )}
@@ -211,6 +214,7 @@ export default function App() {
           <div className="results-heading">
             <p className="kicker">Provisional extraction</p>
             <h2>{extraction.title.value ?? "Untitled role"}</h2>
+            {draft && <p>Saved provisional draft · {draft.id}</p>}
             <a href={extraction.source_url} target="_blank" rel="noreferrer">
               Review original posting ↗
             </a>
