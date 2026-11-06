@@ -46,6 +46,7 @@ async def extraction(request: ExtractionSubmission) -> ValidationResponse:
         validated = validate_extraction(
             request.raw_json,
             request.expected_source_url,
+            request.canonical_cleaned_source,
         )
     except (ValidationError, ValueError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error

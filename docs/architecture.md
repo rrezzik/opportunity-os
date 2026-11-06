@@ -14,7 +14,7 @@ React and TypeScript web interface
           PostgreSQL
 ```
 
-The initial workflow captures a posting URL, preserves source material, extracts structured facts with supporting quotations, allows human correction and approval, and adds approved opportunities to a CRM.
+The initial workflow captures a posting URL, preserves source material, extracts structured facts with verbatim supporting source text, allows human correction and approval, and adds approved opportunities to a CRM.
 
 Market Intelligence is an aggregate view over approved requirement occurrences. It does not replace the individual opportunity workflow and must preserve links to every source occurrence.
 

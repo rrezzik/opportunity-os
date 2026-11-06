@@ -1,14 +1,17 @@
 export type EvidenceText = {
   value: string | null;
-  quote: string | null;
+  supporting_source_text: string | null;
+  confidence: "low" | "medium" | "high" | null;
 };
 
 export type EvidenceItem = {
   value: string;
-  quote: string | null;
+  supporting_source_text: string;
+  confidence: "low" | "medium" | "high";
 };
 
 export type PostingExtraction = {
+  schema_version: "1.0";
   company: EvidenceText;
   title: EvidenceText;
   location: EvidenceText;
@@ -27,9 +30,11 @@ export type PostingExtraction = {
 };
 
 export type SourcePackage = {
+  source_format_version: "1.0";
   source_url: string;
   source_identifier: string;
   source_label: string;
-  cleaned_text: string;
+  raw_source: string;
+  cleaned_source: string;
   prompt: string;
 };

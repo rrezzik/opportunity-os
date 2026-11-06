@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "company": {
+    "value": "Fellow",
+    "supporting_source_text": "Company: Fellow",
+    "confidence": "high"
+  },
+  "title": {
+    "value": "Software Engineer",
+    "supporting_source_text": "Title: Software Engineer",
+    "confidence": "high"
+  },
+  "location": {
+    "value": "Canada",
+    "supporting_source_text": "Locations: Canada",
+    "confidence": "high"
+  },
+  "compensation": {
+    "value": null,
+    "supporting_source_text": null,
+    "confidence": null
+  },
+  "employment_type": {
+    "value": "Full time",
+    "supporting_source_text": "Employment types: full time",
+    "confidence": "high"
+  },
+  "posting_date": {
+    "value": "2026-10-15T12:49:10.996Z",
+    "supporting_source_text": "Posted at: 2026-10-15T12:49:10.996Z",
+    "confidence": "high"
+  },
+  "work_arrangement": {
+    "value": "Remote-first in Canada",
+    "supporting_source_text": "Fellow is a remote-first company working across Canada.",
+    "confidence": "high"
+  },
+  "source_identifier": "97059938-software-engineer",
+  "source_url": "https://techjobfinder.investottawa.ca/companies/fellow-2-842f8800-77a3-4e17-a03e-fdba3aeea256/jobs/97059938-software-engineer",
+  "responsibilities": [
+    {
+      "value": "Build reliable software",
+      "supporting_source_text": "Build reliable software for real customers.",
+      "confidence": "high"
+    }
+  ],
+  "required_qualifications": [
+    {
+      "value": "Professional software engineering experience",
+      "supporting_source_text": "Professional software engineering experience is required.",
+      "confidence": "high"
+    }
+  ],
+  "preferred_qualifications": [],
+  "technologies": [
+    {
+      "value": "React",
+      "supporting_source_text": "Work with React and Python across the product.",
+      "confidence": "high"
+    },
+    {
+      "value": "Python",
+      "supporting_source_text": "Work with React and Python across the product.",
+      "confidence": "high"
+    }
+  ],
+  "seniority": {
+    "value": null,
+    "supporting_source_text": null,
+    "confidence": null
+  },
+  "suggested_role_family": {
+    "value": "Software engineering",
+    "supporting_source_text": "Build reliable software for real customers.",
+    "confidence": "medium"
+  }
+}

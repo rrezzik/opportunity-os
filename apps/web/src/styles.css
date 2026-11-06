@@ -79,6 +79,7 @@ a { color: #31735e; font-weight: 750; }
 .evidence-card { background: #f5f5f0; border-radius: 12px; padding: 18px; }
 .eyebrow { margin: 0 0 8px; }
 .value { font-size: 1.05rem; font-weight: 750; margin: 0; }
+.confidence { color: #6c7776; font-size: 0.78rem; margin: 8px 0 0; text-transform: capitalize; }
 .missing { color: #788181; font-style: italic; }
 blockquote { color: #536063; border-left: 3px solid #abc8bd; margin: 14px 0 0; padding-left: 12px; line-height: 1.5; }
 .list-section { border-top: 1px solid #d7d8d2; padding-top: 24px; margin-top: 24px; }

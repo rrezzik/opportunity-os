@@ -27,7 +27,12 @@ function ScalarField({ label, evidence }: { label: string; evidence: EvidenceTex
       <p className={evidence.value ? "value" : "value missing"}>
         {evidence.value ?? "Not provided"}
       </p>
-      {evidence.quote && <blockquote>“{evidence.quote}”</blockquote>}
+      {evidence.confidence && (
+        <p className="confidence">Model confidence: {evidence.confidence}</p>
+      )}
+      {evidence.supporting_source_text && (
+        <blockquote>“{evidence.supporting_source_text}”</blockquote>
+      )}
     </article>
   );
 }
@@ -43,7 +48,8 @@ function EvidenceList({ label, items }: { label: string; items: EvidenceItem[] }
           {items.map((item, index) => (
             <li key={`${item.value}-${index}`}>
               <strong>{item.value}</strong>
-              {item.quote && <blockquote>“{item.quote}”</blockquote>}
+              <p className="confidence">Model confidence: {item.confidence}</p>
+              <blockquote>“{item.supporting_source_text}”</blockquote>
             </li>
           ))}
         </ul>
@@ -108,13 +114,16 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           expected_source_url: source.source_url,
+          canonical_cleaned_source: source.cleaned_source,
           raw_json: rawJson,
         }),
       });
       if (!response.ok) throw new Error(await errorMessage(response));
       const data = (await response.json()) as { extraction: PostingExtraction };
       setExtraction(data.extraction);
-      setStatus("Extraction validated. Review every value against its quotation.");
+      setStatus(
+        "Extraction validated. Review every value against its supporting source text.",
+      );
     } catch (caught) {
       setExtraction(null);
       setStatus("");
@@ -131,7 +140,7 @@ export default function App() {
         <h1>Turn a job posting into reviewable evidence.</h1>
         <p>
           Fetch one approved public posting, run a transparent manual OpenCode handoff,
-          and inspect every extracted claim beside its source quotation.
+          and inspect every extracted claim beside its supporting source text.
         </p>
       </header>
 
@@ -158,9 +167,13 @@ export default function App() {
           <p className="source-meta">
             <strong>{source.source_label}</strong> · {source.source_identifier}
           </p>
+          <p className="source-meta">
+            Raw source preserved separately in memory (
+            {source.raw_source.length.toLocaleString()} characters).
+          </p>
           <details>
             <summary>Preview cleaned source</summary>
-            <pre>{source.cleaned_text}</pre>
+            <pre>{source.cleaned_source}</pre>
           </details>
           <textarea aria-label="Extraction prompt" value={source.prompt} readOnly rows={12} />
           <button type="button" className="secondary" onClick={copyPrompt}>
@@ -203,6 +216,7 @@ export default function App() {
             </a>
           </div>
           <div className="evidence-grid">
+            <ScalarField label="Title" evidence={extraction.title} />
             <ScalarField label="Company" evidence={extraction.company} />
             <ScalarField label="Location" evidence={extraction.location} />
             <ScalarField label="Compensation" evidence={extraction.compensation} />
