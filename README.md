@@ -39,11 +39,15 @@ Approved posting URL
 → Copy Prompt
 → manual OpenCode inference
 → Paste JSON
-→ strict schema and source-URL validation
+→ versioned schema, provenance, and exact evidence validation
 → evidence review
 ```
 
-The API accepts only the Fellow Software Engineer and Multiview Software Developer URLs encoded in [`apps/api/app/services.py`](apps/api/app/services.py). This narrow allowlist prevents the server from acting as a general-purpose URL fetcher. Fetched HTML, cleaned source, prompts, and model output are not persisted by this spike.
+The API accepts only the Fellow Software Engineer and Multiview Software Developer URLs encoded in [`apps/api/app/services.py`](apps/api/app/services.py). This narrow allowlist prevents the server from acting as a general-purpose URL fetcher. Redirects and query parameters are rejected.
+
+Raw HTML and canonical cleaned source are kept as distinct in-memory values. Extraction contract `1.0` requires every non-null value to include `supporting_source_text` copied as one exact, contiguous substring of the cleaned source, plus a low, medium, or high model-confidence label. Validation confirms the schema version, source URL, source identifier, cleaned-source provenance markers, and every exact evidence match before displaying the provisional result. Exact matching proves that text exists; it does not prove that the model interpreted it correctly, so human review remains required.
+
+Fetched HTML, cleaned source, prompts, and model output are not persisted by this spike. Until server-owned persistence is introduced, the local web client returns its in-memory cleaned source to the API during validation.
 
 ## Planned Architecture
 
@@ -99,7 +103,7 @@ Open the web interface at <http://localhost:5173>. The FastAPI service and inter
 3. Paste the prompt into a new OpenCode request. Do not add private candidate or application data.
 4. Copy the JSON-only response into **OpenCode JSON response**.
 5. Select **Validate and display**.
-6. Review every extracted value against its quotation. Validation confirms the JSON contract and source URL, not factual correctness.
+6. Review every extracted value against its supporting source text. Validation confirms that the evidence occurs verbatim in the cleaned source, not that the model's interpretation is factually or semantically correct.
 
 This handoff is intentionally manual: the application does not expose OpenCode as a local network service and does not require a paid model API.
 

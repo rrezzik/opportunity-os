@@ -1,5 +1,4 @@
 import json
-import re
 from html import unescape
 from urllib.parse import urlsplit, urlunsplit
 
@@ -140,13 +139,15 @@ Rules:
 - Use only facts supported by the posting.
 - Use null or an empty list when the posting does not provide a value.
 - Never infer compensation, employment type, date, work arrangement, or seniority.
-- Give each extracted scalar or list item a verbatim supporting quote when the
-  posting provides one. Use null for quote only when the value is system metadata
-  or the posting does not state supporting text.
+- Set schema_version exactly to "1.0".
+- For every non-null extracted value, copy supporting_source_text as one exact,
+  contiguous, verbatim substring of the posting. Never paraphrase or stitch text.
+- Set confidence to low, medium, or high for every non-null extracted value.
+- When a value is null, supporting_source_text and confidence must also be null.
 - Set source_url exactly to {json.dumps(source_url)}.
 - Set source_identifier exactly to {json.dumps(source_identifier)}.
-- suggested_role_family may classify the role, but its quote must cite the text
-  that most strongly supports the classification.
+- suggested_role_family may classify the role, but its supporting_source_text
+  must cite the exact text that most strongly supports the classification.
 
 <posting>
 {cleaned_text}
@@ -173,15 +174,52 @@ async def fetch_source_package(url: str) -> SourcePackage:
         response.text, normalized_url
     )
     return SourcePackage(
+        source_format_version="1.0",
         source_url=normalized_url,
         source_identifier=source_identifier,
         source_label=APPROVED_SOURCES[normalized_url],
-        cleaned_text=cleaned_text,
+        raw_source=response.text,
+        cleaned_source=cleaned_text,
         prompt=build_prompt(normalized_url, source_identifier, cleaned_text),
     )
 
 
-def validate_extraction(raw_json: str, expected_source_url: str) -> PostingExtraction:
+def _supporting_source_texts(extraction: PostingExtraction) -> list[str]:
+    scalar_fields = (
+        extraction.company,
+        extraction.title,
+        extraction.location,
+        extraction.compensation,
+        extraction.employment_type,
+        extraction.posting_date,
+        extraction.work_arrangement,
+        extraction.seniority,
+        extraction.suggested_role_family,
+    )
+    list_fields = (
+        extraction.responsibilities,
+        extraction.required_qualifications,
+        extraction.preferred_qualifications,
+        extraction.technologies,
+    )
+    texts = [
+        field.supporting_source_text
+        for field in scalar_fields
+        if field.supporting_source_text is not None
+    ]
+    texts.extend(
+        item.supporting_source_text
+        for items in list_fields
+        for item in items
+    )
+    return texts
+
+
+def validate_extraction(
+    raw_json: str,
+    expected_source_url: str,
+    canonical_cleaned_source: str,
+) -> PostingExtraction:
     extraction = PostingExtraction.model_validate_json(raw_json)
     normalized_expected = normalize_approved_url(expected_source_url)
     normalized_actual = normalize_approved_url(extraction.source_url)
@@ -192,4 +230,18 @@ def validate_extraction(raw_json: str, expected_source_url: str) -> PostingExtra
         raise ValueError(
             "The extraction source identifier does not match the fetched posting."
         )
+    expected_source_markers = (
+        f"Source URL: {normalized_expected}",
+        f"Source identifier: {expected_identifier}",
+    )
+    if any(marker not in canonical_cleaned_source for marker in expected_source_markers):
+        raise ValueError(
+            "The canonical cleaned source does not match the expected posting."
+        )
+    for supporting_source_text in _supporting_source_texts(extraction):
+        if supporting_source_text not in canonical_cleaned_source:
+            raise ValueError(
+                "Supporting source text does not occur verbatim in the canonical "
+                f"cleaned source: {supporting_source_text!r}"
+            )
     return extraction
