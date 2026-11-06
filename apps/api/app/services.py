@@ -218,6 +218,7 @@ def _supporting_source_texts(extraction: PostingExtraction) -> list[str]:
 def validate_extraction(
     raw_json: str,
     expected_source_url: str,
+    expected_source_identifier: str,
     canonical_cleaned_source: str,
 ) -> PostingExtraction:
     extraction = PostingExtraction.model_validate_json(raw_json)
@@ -225,14 +226,13 @@ def validate_extraction(
     normalized_actual = normalize_approved_url(extraction.source_url)
     if normalized_actual != normalized_expected:
         raise ValueError("The extraction source URL does not match the fetched posting.")
-    expected_identifier = urlsplit(normalized_expected).path.rsplit("/", 1)[-1]
-    if extraction.source_identifier != expected_identifier:
+    if extraction.source_identifier != expected_source_identifier:
         raise ValueError(
             "The extraction source identifier does not match the fetched posting."
         )
     expected_source_markers = (
         f"Source URL: {normalized_expected}",
-        f"Source identifier: {expected_identifier}",
+        f"Source identifier: {expected_source_identifier}",
     )
     if any(marker not in canonical_cleaned_source for marker in expected_source_markers):
         raise ValueError(

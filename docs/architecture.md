@@ -2,9 +2,11 @@
 
 ## Current State
 
-The repository currently contains the project substrate only. Application components will be introduced through working vertical slices rather than speculative scaffolding.
+The current vertical slice uses React and FastAPI to capture one allowlisted public
+posting, preserve its source in PostgreSQL, validate a manually produced OpenCode
+extraction against the server-owned canonical source, and save a provisional draft.
 
-## Planned Components
+## Components
 
 ```text
 React and TypeScript web interface
@@ -14,7 +16,16 @@ React and TypeScript web interface
           PostgreSQL
 ```
 
-The initial workflow captures a posting URL, preserves source material, extracts structured facts with verbatim supporting source text, allows human correction and approval, and adds approved opportunities to a CRM.
+`posting_captures` stores immutable capture provenance: URL, source identifier,
+capture time, raw source, canonical cleaned source, source format version, and raw
+content SHA-256. `extraction_drafts` stores the capture foreign key, extraction
+schema version, validated structured JSON, provisional status, and creation time.
+PostgreSQL is authoritative; the browser supplies only a capture ID and candidate
+JSON when requesting validation.
+
+The API exposes capture creation/retrieval and provisional extraction
+creation/retrieval. Correction, approval, CRM ingestion, aggregation, and
+embeddings remain outside this slice.
 
 Market Intelligence is an aggregate view over approved requirement occurrences. It does not replace the individual opportunity workflow and must preserve links to every source occurrence.
 

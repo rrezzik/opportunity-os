@@ -1,4 +1,6 @@
+from datetime import datetime
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -65,11 +67,28 @@ class SourcePackage(StrictModel):
     prompt: str
 
 
+class CaptureResponse(StrictModel):
+    id: UUID
+    source_format_version: Literal["1.0"]
+    source_url: str
+    source_identifier: str
+    source_label: str
+    captured_at: datetime
+    raw_source: str
+    cleaned_source: str
+    content_sha256: str
+    prompt: str
+
+
 class ExtractionSubmission(StrictModel):
-    expected_source_url: str
-    canonical_cleaned_source: str = Field(min_length=1)
+    capture_id: UUID
     raw_json: str = Field(min_length=1)
 
 
 class ValidationResponse(StrictModel):
+    id: UUID
+    capture_id: UUID
+    extraction_schema_version: Literal["1.0"]
+    status: Literal["provisional"]
+    created_at: datetime
     extraction: PostingExtraction

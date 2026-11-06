@@ -55,7 +55,7 @@ jobs:
         run: docker compose build
 
       - name: Run API tests
-        run: docker compose run --rm api pytest -q
+        run: docker compose run --rm api sh -c "alembic upgrade head && pytest -q"
 
       - name: Type-check and build web application
         run: docker compose run --rm web npm run build
